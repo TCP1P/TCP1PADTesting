@@ -1,4 +1,8 @@
-FROM python:3.11-slim
+# Python 3.9: PyYAML 3.13 (the deliberately-outdated A06 component) relies on
+# collections.Hashable, which was REMOVED in 3.10 — on 3.10+ the YAML feature
+# errors at runtime (and the SLA checker rightly flags it). 3.9 keeps the
+# feature working AND keeps yaml.load() unsafe (full constructor -> RCE).
+FROM python:3.9-slim
 
 # Keep out of the host's daily `docker image prune -af` (the prune cron
 # excludes label org.gzctf.keep=true).

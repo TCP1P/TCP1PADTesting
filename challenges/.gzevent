@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/gzevent.schema.yaml
+
+# Event manifest for the TCP1P A&D testing challenges.
+#
+# The GZCTF repo scanner (admin -> Repo Bindings) discovers this file and
+# creates/updates a Game from it; every challenge.yml under this directory
+# (owasp-portal/, pwn-armory/) is imported into that game. Imported challenges
+# stay HIDDEN until you enable them in the admin UI.
+
+title: "TCP1P A&D Testing"
+summary: "Two A&D targets: an OWASP-Top-10 web portal and a multi-bug PWN service."
+content: |
+  ## TCP1P Attack & Defense — testing event
+
+  Two services, each handed to every team:
+
+  - **owasp-portal** — a notes portal where each legitimate feature hides one
+    OWASP Top 10 (2021) vulnerability; all ten leak the flag.
+  - **pwn-armory** — a heap item-manager binary (no canary/PIE/RELRO) with ten
+    classic memory-corruption bug classes.
+
+  The platform plants a fresh flag into every service each tick. Keep your
+  service up, patch the bugs, and steal + submit other teams' flags.
+
+# ISO-8601. Local offsets are fine — normalized to UTC on import.
+start: "2026-06-01T09:00:00+07:00"
+end: "2026-06-01T17:00:00+07:00"
+
+hidden: true               # keep hidden until you flip it in the admin UI
+practiceMode: true
+acceptWithoutReview: false
+teamMemberCountLimit: 5
+containerCountLimit: 5
+
+# Event-wide Attack & Defense settings — shared by EVERY A&D challenge here.
+ad:
+  tickSeconds: 120             # round length in seconds
+  flagLifetimeTicks: 5         # ticks a planted flag stays submittable
+  warmupSeconds: 600           # grace after start before scoring begins
+  resetCooldownMinutes: 5      # min minutes between a team's self-resets
+  allowSnapshotDownload: true

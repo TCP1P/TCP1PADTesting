@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
+
+name: "owasp-portal"
+author: "TCP1P"
+
+# supports markdown & html tags
+description: |
+  **TeamPortal** — a small team notes portal (register, log in, write & search
+  private notes, reset your password, import settings/preferences, fetch link
+  previews).
+
+  Every legitimate feature also carries one **OWASP Top 10 (2021)**
+  vulnerability, and **every one of them leaks the flag.** The platform plants
+  a fresh flag into `$GZCTF_FLAG_FILE` each tick and the app mirrors it into the
+  admin note / config so each bug class has a path to it.
+
+  Defenders: patch all ten without breaking the SLA checker (it only exercises
+  the legitimate features). Attackers: steal other teams' flags via any path.
+
+type: "AttackDefense" # don't touch this value
+value: 1000 # don't touch this value (points are admin-controlled)
+
+# A&D reuses the container block for the per-team SERVICE image + port.
+# containerImage omitted -> platform auto-builds ./src/Dockerfile.
+container:
+  exposePort: 8080
+  memoryLimit: 512
+  cpuCount: 1
+  storageLimit: 512
+
+ad:
+  # Functionality-only SLA checker (enochecker3 exit codes). Build ./checker
+  # and push it to a registry the cluster/daemon can pull, then keep this ref
+  # in sync. Omit to fall back to a plain TCP-reachability probe.
+  checkerImage: "ghcr.io/tcp1p/owasp-portal-checker:latest"
+  # SSRF (A10) targets file:// and 127.0.0.1, so no public egress is required;
+  # sandbox it.
+  allowEgress: false
+  allowSelfReset: true

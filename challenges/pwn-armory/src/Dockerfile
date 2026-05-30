@@ -9,7 +9,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY src/armory.c /app/armory.c
+COPY armory.c /app/armory.c
 # Deliberately weak mitigations so the memory-corruption bugs are exploitable:
 #   -fno-stack-protector  no stack canary (bug #1 ret overwrite)
 #   -no-pie -fno-pic      fixed addresses -> print_flag() is a stable target
