@@ -7,20 +7,28 @@
 # (owasp-portal/, pwn-armory/) is imported into that game. Imported challenges
 # stay HIDDEN until you enable them in the admin UI.
 
-title: "TCP1P A&D Testing"
-summary: "Two A&D targets: an OWASP-Top-10 web portal and a multi-bug PWN service."
+title: "TCP1P A&D + KotH Testing"
+summary: "Four targets: OWASP-Top-10 and PWN, in both Attack & Defense and King of the Hill."
 content: |
-  ## TCP1P Attack & Defense — testing event
+  ## TCP1P Attack & Defense + King of the Hill — testing event
 
-  Two services, each handed to every team:
+  Four services on one A&D engine:
 
-  - **owasp-portal** — a notes portal where each legitimate feature hides one
-    OWASP Top 10 (2021) vulnerability; all ten leak the flag.
-  - **pwn-armory** — a heap item-manager binary (no canary/PIE/RELRO) with ten
+  **Attack & Defense** (one instance per team; flag rotates each tick):
+  - **owasp-portal** — notes portal; each feature hides one OWASP Top 10 (2021)
+    vuln; all ten leak the flag.
+  - **pwn-armory** — heap item-manager binary (no canary/PIE/RELRO) with ten
     classic memory-corruption bug classes.
 
-  The platform plants a fresh flag into every service each tick. Keep your
-  service up, patch the bugs, and steal + submit other teams' flags.
+  **King of the Hill** (one SHARED hill; plant your per-round token in
+  `/koth/king` and hold it):
+  - **koth-throne** — OWASP-Top-10 web hill; each vuln lets you write the
+    exact token to `/koth/king` (reach the admin crown or write the marker).
+  - **koth-pwn** — binary hill; memory-corruption flips `is_admin` or `ret2
+    do_crown()` to enthrone your token.
+
+  Keep your service/hill healthy, patch the bugs, and (A&D) steal + submit
+  flags or (KotH) hold the marker.
 
 # ISO-8601. Local offsets are fine — normalized to UTC on import.
 start: "2026-06-01T09:00:00+07:00"

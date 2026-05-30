@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
+
+name: "koth-throne"
+author: "TCP1P"
+
+# supports markdown & html tags
+description: |
+  **Throne Room** — a King-of-the-Hill web "hill". ONE shared service; there is
+  no per-team flag. Each round the platform issues you a fresh control token —
+  exploit the hill to write that **exact** token into the marker file
+  `/koth/king`. While it holds your token and the hill is healthy, you earn
+  hold points.
+
+  Crowning is admin-only and you get no admin account, so taking the hill means
+  exploiting one of ten planted **OWASP Top 10 (2021)** bugs — each one lets you
+  land your token in `/koth/king` (reach the crown, or write the marker directly
+  via RCE / arbitrary write). Defenders patch the bugs while keeping `GET /` and
+  the legitimate crown alive.
+
+type: "KingOfTheHill" # don't touch this value
+value: 1000 # don't touch this value (KotH is hold-scored, not flag-scored)
+
+# KotH reuses the container block, but there is ONE shared hill for the game.
+# containerImage omitted -> platform auto-builds ./src/Dockerfile.
+container:
+  exposePort: 8080
+  memoryLimit: 512
+  cpuCount: 1
+  storageLimit: 512
+
+ad:
+  # Health-only checker (KotH runs it with no flag). Build ./checker and push
+  # it to a registry the cluster/daemon can pull. Omit -> TCP-reachability probe.
+  checkerImage: "ghcr.io/tcp1p/koth-throne-checker:latest"
+  # The hill is a target teams exploit from outside; it never calls out.
+  allowEgress: false
+  # MUST stay false: the hill is SHARED — a team self-reset would wipe everyone's
+  # foothold + the current king.
+  allowSelfReset: false

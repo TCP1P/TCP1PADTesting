@@ -1,7 +1,8 @@
-# TCP1P A&D Testing
+# TCP1P A&D + KotH Testing
 
-Two **Attack & Defense** challenges for GZCTF, authored in the gzcli challenge
-template format (matching `gzctf-platform-template/challenges/attack-defense`):
+Four challenges for GZCTF — an **OWASP Top 10** target and a **PWN** target in
+each of two modes: **Attack & Defense** and **King of the Hill**. Authored in
+the gzcli template format (matching `gzctf-platform-template/challenges/{attack-defense,king-of-the-hill}`):
 a `.gzevent` event manifest plus one directory per challenge, each with
 `challenge.yml`, an auto-built `src/` service, a harness-based `checker/`, and a
 reference `solver/`.
@@ -9,26 +10,27 @@ reference `solver/`.
 ```
 challenges/
   .gzevent                     # event manifest (repo-binding imports this)
-  owasp-portal/                # OWASP Top 10 web target
-    challenge.yml
-    src/      Dockerfile app.py requirements.txt supervisord.conf
-    checker/  Dockerfile checker.py checks.py run.py requirements.txt
-    solver/   solve.py
-  pwn-armory/                  # multi-bug PWN target
-    challenge.yml
-    src/      Dockerfile armory.c supervisord.conf
-    checker/  Dockerfile checker.py checks.py run.py requirements.txt
-    solver/   solve.py
+  owasp-portal/   (A&D)   OWASP Top 10 web target — every vuln leaks the flag
+  pwn-armory/     (A&D)   multi-bug PWN target — every bug leaks the flag
+  koth-throne/    (KotH)  OWASP Top 10 web hill — every vuln crowns you
+  koth-pwn/       (KotH)  multi-bug PWN hill — every bug crowns you
+# each: challenge.yml + src/{Dockerfile,…} + checker/{checker.py,checks.py,run.py,…} + solver/solve.py
 ```
 
-Per the template contract: the **service** auto-builds from `./src/Dockerfile`
-(supervisord PID 1 so a botched exploit doesn't drop the box; reads the live
-flag fresh from `$GZCTF_FLAG_FILE`, never baked). The **checker** is the
-enochecker3 harness — `checker.py`/`run.py` are copied verbatim and you only
-edit `checks.py` (each `@check` function gets a `Target` with
-`.url/.ip/.port/.flag`; return = Ok, `raise Mumble` = up-but-wrong, `t.get/post`
-raise `Offline`). **Both checkers verify functionality only** (SLA); flag theft
-is the attackers' `solver/` job.
+**Template contract.** The **service** auto-builds from `./src/Dockerfile`
+(supervisord PID 1 so a botched exploit doesn't drop the box). The **checker**
+is the enochecker3 harness — `checker.py`/`run.py` copied verbatim, you only edit
+`checks.py` (each `@check` gets a `Target`; return = Ok, `raise Mumble` =
+up-but-wrong, `t.get/post`/sockets → `Offline`). **All four checkers verify
+functionality/health only**; capturing the flag (A&D) or crowning (KotH) is the
+`solver/` job.
+
+- **A&D**: one container per team; the platform plants a fresh flag at
+  `$GZCTF_FLAG_FILE` each tick. Steal other teams' flags and submit them.
+- **KotH**: ONE shared "hill"; no per-team flag. Each round the platform issues
+  a control token — write it **exactly** into `/koth/king` (the platform
+  `Trim()`s the file and matches it against the token). Hold it while the hill
+  is healthy to score. `allowSelfReset: false` (shared hill).
 
 ---
 
@@ -75,21 +77,63 @@ compiled **no canary / no PIE / no RELRO / exec stack**. `print_flag()` reads
 `solver/solve.py` does command-injection and ret2win; `checker/checks.py`
 drives Add→Show→List→Edit→Show→Echo→Secret(locked)→Delete legitimately.
 
+## Challenge 3 — `koth-throne` (KotH, OWASP Top 10 — every vuln crowns you)
+
+A Flask "hill". Crowning (writing `/koth/king`) is admin-only and players get
+no admin account, so taking the hill means exploiting one of ten OWASP vulns —
+each lands your **exact** round token in `/koth/king`.
+
+| OWASP 2021 | Where | How it crowns |
+|------------|-------|---------------|
+| A01 Broken Access Control | `POST /throne` + `X-User-Role: admin` | trusts a client role header |
+| A02 Cryptographic Failures | `session` cookie | forge `role=admin` (md5/secret=`"secret"`) → `/throne` |
+| A03 Injection | `POST /login` | SQLi `admin'-- ` auth bypass → admin → `/throne` |
+| A04 Insecure Design | `POST /reset` | leaked reset token → take admin → `/throne` |
+| A05 Security Misconfiguration | `GET /debug/write?file=/koth/king&data=` | arbitrary file write |
+| A06 Vulnerable Components | `POST /import/yaml` | PyYAML 3.13 RCE writes the marker |
+| A07 Auth Failures | `POST /login` | default `admin:admin123` → `/throne` |
+| A08 Integrity Failures | `POST /import/prefs` | pickle RCE writes the marker |
+| A09 Logging Failures | `X-Forwarded-Log: /koth/king` + `User-Agent: <token>` | header-controlled raw log write |
+| A10 SSRF | `GET /fetch?url=…/internal/crown?token=` | reach the localhost-only crown |
+
+`solver/solve.py` implements all ten (`crown_via_AXX`); `checker/checks.py` is a
+read-only health probe — never crowns — confirming `GET /` is up and the crown
+is still guarded (non-admin `POST /throne` → 4xx, not 5xx, not 200).
+
+## Challenge 4 — `koth-pwn` (KotH, PWN — every bug crowns you)
+
+A C binary hill over TCP (no canary/PIE/RELRO/exec-stack). Only `do_crown()`
+(`0x401226`) writes `/koth/king`, enthroning the global `banner`. Set `banner`
+to your token, then flip `is_admin` (`0x4038c0`) or `ret2 do_crown()`.
+
+| Bug | Menu | Notes |
+|-----|------|-------|
+| Stack buffer overflow | `3` Set nick | 64B buf, `read()` 512 → ret2 `do_crown` (offset 72) |
+| Format string | `4` Echo | `printf(buf)` → `%n` write `is_admin` |
+| OOB array write | `7/8` Notes | unchecked `idx` → write `is_admin` |
+| UAF / double free / heap overflow | `7/8/9` Notes | slot never NULLed; unbounded edit len |
+| Auth backdoor | `5` Login | password `letmein` → `is_admin` |
+
+`solver/solve.py` crowns via the auth backdoor and ret2win; `checker/checks.py`
+is read-only — confirms the menu is alive and an un-privileged crown is denied
+(it never sets `banner` or flips `is_admin`, so it can't touch `/koth/king`).
+
 ---
 
 ## Build, test, deploy
 
 ```sh
 # --- service images (what challenge.yml auto-builds) ---
-docker build -t owasp-portal challenges/owasp-portal/src
-docker build -t pwn-armory   challenges/pwn-armory/src
+for c in owasp-portal pwn-armory koth-throne koth-pwn; do
+  docker build -t $c challenges/$c/src
+done
 
 # --- checker images: build, then PUSH to the registry referenced in each
 #     challenge.yml `ad.checkerImage` so the cluster/daemon can pull them ---
-docker build -t ghcr.io/tcp1p/owasp-portal-checker:latest challenges/owasp-portal/checker
-docker build -t ghcr.io/tcp1p/pwn-armory-checker:latest   challenges/pwn-armory/checker
-docker push  ghcr.io/tcp1p/owasp-portal-checker:latest
-docker push  ghcr.io/tcp1p/pwn-armory-checker:latest
+for c in owasp-portal pwn-armory koth-throne koth-pwn; do
+  docker build -t ghcr.io/tcp1p/$c-checker:latest challenges/$c/checker
+  docker push  ghcr.io/tcp1p/$c-checker:latest
+done
 
 # --- local smoke test: run a service with a fake flag, point the checker at it ---
 echo 'flag{local_test}' > /tmp/flag

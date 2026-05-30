@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
+
+name: "koth-pwn"
+author: "TCP1P"
+
+# supports markdown & html tags
+description: |
+  **Throne (pwn)** — a King-of-the-Hill binary "hill" served over TCP (one
+  process per connection). ONE shared service; no per-team flag. Each round the
+  platform issues you a fresh control token — exploit the hill to write that
+  **exact** token into the marker file `/koth/king`, and hold it to score.
+
+  The only writer of the marker is `do_crown()`, which enthrones the global
+  `banner`. Crowning needs `is_admin`, and no password is given out — so taking
+  the hill means a memory-corruption exploit: flip `is_admin` (format string,
+  OOB write, auth backdoor) or `ret2 do_crown()` (stack overflow; no canary, no
+  PIE). Set `banner` to your token first, then trigger a bug. Defenders patch
+  the binary while keeping the menu + legitimate (admin) crown working.
+
+type: "KingOfTheHill" # don't touch this value
+value: 1000 # don't touch this value (KotH is hold-scored, not flag-scored)
+
+# containerImage omitted -> platform auto-builds ./src/Dockerfile.
+container:
+  exposePort: 9000
+  memoryLimit: 256
+  cpuCount: 1
+  storageLimit: 256
+
+ad:
+  # Health-only checker (KotH runs it with no flag). Build ./checker and push
+  # it to a registry the cluster/daemon can pull. Omit -> TCP-reachability probe.
+  checkerImage: "ghcr.io/tcp1p/koth-pwn-checker:latest"
+  allowEgress: false
+  # MUST stay false: the hill is SHARED — a self-reset would wipe everyone.
+  allowSelfReset: false
