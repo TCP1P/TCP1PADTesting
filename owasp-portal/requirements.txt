@@ -1,0 +1,5 @@
+# A06 (Vulnerable & Outdated Components): PyYAML < 5.1 still defaults yaml.load()
+# to the FullLoader-equivalent unsafe constructor, enabling !!python/object RCE.
+PyYAML==3.13
+Flask==3.0.3
+Werkzeug==3.0.3

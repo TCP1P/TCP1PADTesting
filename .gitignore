@@ -1,0 +1,7 @@
+# build / test artifacts
+*.o
+pwn-armory/src/armory
+flag
+/tmp/
+__pycache__/
+*.pyc
