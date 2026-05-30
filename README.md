@@ -2,20 +2,30 @@
 
 Four challenges for GZCTF — an **OWASP Top 10** target and a **PWN** target in
 each of two modes: **Attack & Defense** and **King of the Hill**. Authored in
-the gzcli template format (matching `gzctf-platform-template/challenges/{attack-defense,king-of-the-hill}`):
-a `.gzevent` event manifest plus one directory per challenge, each with
+the gzcli repo layout: a `.gzctf/` server config plus an **event tree**
+`events/<event>/<Category>/<slug>/`, where each leaf challenge has a
 `challenge.yml`, an auto-built `src/` service, a harness-based `checker/`, and a
-reference `solver/`.
+reference `solver/`. gzcli walks `events/<event>/<Category>/` (categories: Misc,
+Crypto, Pwn, Web, Reverse, …) and the admin-UI Repo Binding imports every
+`challenge.yml` beneath the `.gzevent`.
 
 ```
-challenges/
-  .gzevent                     # event manifest (repo-binding imports this)
-  owasp-portal/   (A&D)   OWASP Top 10 web target — every vuln leaks the flag
-  pwn-armory/     (A&D)   multi-bug PWN target — every bug leaks the flag
-  koth-throne/    (KotH)  OWASP Top 10 web hill — every vuln crowns you
-  koth-pwn/       (KotH)  multi-bug PWN hill — every bug crowns you
-# each: challenge.yml + src/{Dockerfile,…} + checker/{checker.py,checks.py,run.py,…} + solver/solve.py
+.gzctf/
+  conf.yaml.example            # copy to conf.yaml (gitignored) for `gzcli sync`
+events/
+  tcp1p-testing/
+    .gzevent                   # → one Game (repo-binding/gzcli import this)
+    Web/
+      owasp-portal/   (A&D)    OWASP Top 10 web target — every vuln leaks the flag
+      koth-throne/    (KotH)   OWASP Top 10 web hill — every vuln crowns you
+    Pwn/
+      pwn-armory/     (A&D)    multi-bug PWN target — every bug leaks the flag
+      koth-pwn/       (KotH)   multi-bug PWN hill — every bug crowns you
+# each leaf: challenge.yml + src/{Dockerfile,…} + checker/{checker.py,checks.py,run.py,…} + solver/solve.py
 ```
+
+The **category is the folder** (`Web/`, `Pwn/`) — the importer takes it from the
+path (the `category:` in each `challenge.yml` is kept in sync for clarity).
 
 **Template contract.** The **service** auto-builds from `./src/Dockerfile`
 (supervisord PID 1 so a botched exploit doesn't drop the box). The **checker**
@@ -122,31 +132,31 @@ is read-only — confirms the menu is alive and an un-privileged crown is denied
 
 ## Build, test, deploy
 
+Both the **service** (`src/Dockerfile`) and the **checker** (`checker/Dockerfile`)
+are built automatically on sync/import — you don't push images or set
+`checkerImage`. To **deploy**, either:
+
+- **gzcli**: `cp .gzctf/conf.yaml.example .gzctf/conf.yaml`, fill in url+creds,
+  then `gzcli sync` (it builds `src/` + `checker/` and wires the refs), or
+- **admin → Repo Bindings**: point a binding at this repo; the poller finds
+  `events/tcp1p-testing/.gzevent`, makes it a Game, and imports all four
+  `challenge.yml`s (hidden until you enable them).
+
+Local smoke test (event tree paths):
+
 ```sh
-# --- service images (what challenge.yml auto-builds) ---
-for c in owasp-portal pwn-armory koth-throne koth-pwn; do
-  docker build -t $c challenges/$c/src
-done
+EV=events/tcp1p-testing
+docker build -t owasp-portal $EV/Web/owasp-portal/src
+docker build -t owasp-portal-checker $EV/Web/owasp-portal/checker
 
-# --- checker images: build, then PUSH to the registry referenced in each
-#     challenge.yml `ad.checkerImage` so the cluster/daemon can pull them ---
-for c in owasp-portal pwn-armory koth-throne koth-pwn; do
-  docker build -t ghcr.io/tcp1p/$c-checker:latest challenges/$c/checker
-  docker push  ghcr.io/tcp1p/$c-checker:latest
-done
-
-# --- local smoke test: run a service with a fake flag, point the checker at it ---
 echo 'flag{local_test}' > /tmp/flag
 docker run -d --name svc -v /tmp/flag:/flag:ro owasp-portal
 IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' svc)
 docker run --rm --network host \
   -e GZCTF_TARGET_IP=$IP -e GZCTF_TARGET_PORT=8080 -e GZCTF_ROUND=1 -e GZCTF_TEAM_ID=1 \
-  ghcr.io/tcp1p/owasp-portal-checker:latest; echo "exit=$?"   # 0 = Ok
-python3 challenges/owasp-portal/solver/solve.py $IP 8080      # prints captured flags
+  owasp-portal-checker; echo "exit=$?"                       # 0 = Ok
+python3 $EV/Web/owasp-portal/solver/solve.py $IP 8080        # prints captured flags
 ```
-
-Deploy via **admin → Repo Bindings**: point it at this repo; the `.gzevent`
-becomes a Game and both `challenge.yml`s are imported (hidden until enabled).
 
 > These are intentionally vulnerable. Run them only inside the isolated A&D
 > environment — never expose them on a trusted network.

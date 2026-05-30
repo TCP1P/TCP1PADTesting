@@ -2,6 +2,7 @@
 
 name: "koth-throne"
 author: "TCP1P"
+category: "Web"   # category is taken from the parent folder (events/<event>/Web/…)
 
 # supports markdown & html tags
 description: |
@@ -29,9 +30,9 @@ container:
   storageLimit: 512
 
 ad:
-  # Health-only checker (KotH runs it with no flag). Build ./checker and push
-  # it to a registry the cluster/daemon can pull. Omit -> TCP-reachability probe.
-  checkerImage: "ghcr.io/tcp1p/koth-throne-checker:latest"
+  # Health-only checker (KotH runs it with no flag). The ./checker image is
+  # built automatically from its Dockerfile on sync/import — do NOT set
+  # checkerImage here; the tooling builds it and wires up the ref.
   # The hill is a target teams exploit from outside; it never calls out.
   allowEgress: false
   # MUST stay false: the hill is SHARED — a team self-reset would wipe everyone's

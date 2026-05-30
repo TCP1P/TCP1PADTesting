@@ -2,6 +2,7 @@
 
 name: "pwn-armory"
 author: "TCP1P"
+category: "Pwn"   # category is taken from the parent folder (events/<event>/Pwn/…)
 
 # supports markdown & html tags
 description: |
@@ -30,10 +31,9 @@ container:
   storageLimit: 256
 
 ad:
-  # Functionality-only SLA checker (enochecker3 exit codes). Build ./checker
-  # and push it to a registry the cluster/daemon can pull, then keep this ref
-  # in sync. Omit to fall back to a plain TCP-reachability probe.
-  checkerImage: "ghcr.io/tcp1p/pwn-armory-checker:latest"
+  # Functionality-only SLA checker (enochecker3 exit codes). The ./checker
+  # image is built automatically from its Dockerfile on sync/import — do NOT
+  # set checkerImage here; the tooling builds it and wires up the ref.
   # A pure local PWN service needs no public egress.
   allowEgress: false
   allowSelfReset: true

@@ -1,6 +1,10 @@
+# gzcli server credentials (keep the .example, never the real one)
+.gzctf/conf.yaml
+
 # build / test artifacts
 *.o
-pwn-armory/src/armory
+**/src/armory
+**/src/hill
 flag
 /tmp/
 __pycache__/
