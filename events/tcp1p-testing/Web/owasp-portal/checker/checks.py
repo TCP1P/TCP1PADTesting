@@ -33,6 +33,23 @@ def _session(t):
     return s
 
 
+def _json(r):
+    """Parse a JSON body, mapping a non-JSON / malformed response to Mumble.
+
+    A team that breaks a core endpoint so it returns HTML / empty / an error
+    page is "up but wrong" = Mumble. Calling r.json() directly would let
+    requests raise JSONDecodeError, which bubbles out of the check and the
+    harness mis-scores as InternalError (a *checker* bug → no SLA penalty),
+    handing that team a free pass for a broken service. Catch it here so the
+    verdict is the Mumble it should be. (requests' JSONDecodeError subclasses
+    ValueError, so this is version-agnostic.) Returns {} for an empty-but-OK
+    body so callers can keep using .get(...)."""
+    try:
+        return r.json() or {}
+    except ValueError:
+        raise Mumble(f"non-JSON response ({r.status_code}): {r.text[:80]!r}") from None
+
+
 @check
 def health(t):
     """GET /health must return a plain 'ok'."""
@@ -66,37 +83,39 @@ def core_flow(t):
         r = s.req("POST", "/login", json={"username": user, "password": pw})
         if r.status_code != 200:
             raise Mumble(f"/login => {r.status_code} {r.text[:80]!r}")
-    if not r.json().get("ok"):
+    if not _json(r).get("ok"):
         raise Mumble(f"/login body => {r.text[:80]!r}")
 
     # create a note + read it back by id
     marker = "marker-" + tag
     r = s.req("POST", "/api/notes", json={"title": "t-" + tag, "body": marker})
-    nid = (r.json() or {}).get("id")
-    if r.status_code != 200 or not nid:
+    if r.status_code != 200:
+        raise Mumble(f"/api/notes create => {r.status_code} {r.text[:80]!r}")
+    nid = _json(r).get("id")
+    if not nid:
         raise Mumble(f"/api/notes create => {r.status_code} {r.text[:80]!r}")
     r = s.req("GET", f"/api/notes/{nid}")
-    if r.status_code != 200 or r.json().get("body") != marker:
+    if r.status_code != 200 or _json(r).get("body") != marker:
         raise Mumble(f"/api/notes/{nid} readback => {r.status_code} {r.text[:80]!r}")
 
     # list shows it
     r = s.req("GET", "/api/notes")
-    if r.status_code != 200 or nid not in [n.get("id") for n in r.json().get("notes", [])]:
+    if r.status_code != 200 or nid not in [n.get("id") for n in _json(r).get("notes", [])]:
         raise Mumble(f"/api/notes list missing id {nid}: {r.text[:120]!r}")
 
     # search finds it
     r = s.req("GET", "/api/search", params={"q": marker})
-    if r.status_code != 200 or not any(x.get("body") == marker for x in r.json().get("results", [])):
+    if r.status_code != 200 or not any(x.get("body") == marker for x in _json(r).get("results", [])):
         raise Mumble(f"/api/search did not find note: {r.text[:120]!r}")
 
     # password reset round-trip (legit self-service)
     r = s.req("POST", "/reset", json={"username": user})
-    token = (r.json() or {}).get("token")
+    token = _json(r).get("token")
     if r.status_code != 200 or not token:
         raise Mumble(f"/reset => {r.status_code} {r.text[:80]!r}")
     newpw = "N3w-" + tag
     r = s.req("POST", "/reset/confirm", json={"token": token, "password": newpw})
-    if r.status_code != 200 or not (r.json() or {}).get("ok"):
+    if r.status_code != 200 or not _json(r).get("ok"):
         raise Mumble(f"/reset/confirm => {r.status_code} {r.text[:80]!r}")
     r = s.req("POST", "/login", json={"username": user, "password": newpw})
     if r.status_code != 200:
@@ -104,16 +123,16 @@ def core_flow(t):
 
     # YAML settings import (benign document)
     r = s.req("POST", "/import/yaml", data="theme: dark\nnotifications: true\n")
-    if r.status_code != 200 or "theme" not in str((r.json() or {}).get("loaded", "")):
+    if r.status_code != 200 or "theme" not in str(_json(r).get("loaded", "")):
         raise Mumble(f"/import/yaml benign => {r.status_code} {r.text[:100]!r}")
 
     # prefs export -> import round-trip
     r = s.req("GET", "/export/prefs")
-    blob = (r.json() or {}).get("prefs")
+    blob = _json(r).get("prefs")
     if r.status_code != 200 or not blob:
         raise Mumble(f"/export/prefs => {r.status_code} {r.text[:80]!r}")
     r = s.req("POST", "/import/prefs", json={"prefs": blob})
-    if r.status_code != 200 or not (r.json() or {}).get("ok"):
+    if r.status_code != 200 or not _json(r).get("ok"):
         raise Mumble(f"/import/prefs round-trip => {r.status_code} {r.text[:80]!r}")
 
     # link-preview fetch of a benign URL (the app's own health endpoint)
