@@ -1,0 +1,6 @@
+# A06 (Vulnerable & Outdated Components): PyYAML < 5.1 leaves yaml.load() on the
+# unsafe full constructor (!!python/object RCE). 3.13 needs Python <= 3.9
+# (collections.Hashable was removed in 3.10) — see the src Dockerfile base image.
+PyYAML==3.13
+Flask==3.0.3
+Werkzeug==3.0.3

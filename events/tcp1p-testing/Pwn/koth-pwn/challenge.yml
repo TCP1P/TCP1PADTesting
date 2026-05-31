@@ -21,6 +21,11 @@ description: |
 type: "KingOfTheHill" # don't touch this value
 value: 1000 # don't touch this value (KotH is hold-scored, not flag-scored)
 
+# Player handout: the hill binary (built from ./src/Dockerfile — symbols match
+# the solver: do_crown@0x401226, is_admin@0x4038c0) plus hill.c + Dockerfile so
+# teams can reverse it and build their crown exploit. gzcli zips ./dist.
+provide: "./dist"
+
 # containerImage omitted -> platform auto-builds ./src/Dockerfile.
 container:
   exposePort: 9000
