@@ -34,6 +34,6 @@ ad:
   # Functionality-only SLA checker (enochecker3 exit codes). The ./checker
   # image is built automatically from its Dockerfile on sync/import — do NOT
   # set checkerImage here; the tooling builds it and wires up the ref.
-  # A pure local PWN service needs no public egress.
-  allowEgress: false
+  # Public egress enabled.
+  allowEgress: true
   allowSelfReset: true

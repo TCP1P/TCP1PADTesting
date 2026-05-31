@@ -32,6 +32,7 @@ ad:
   # Health-only checker (KotH runs it with no flag). The ./checker image is
   # built automatically from its Dockerfile on sync/import — do NOT set
   # checkerImage here; the tooling builds it and wires up the ref.
-  allowEgress: false
+  # Public egress enabled.
+  allowEgress: true
   # MUST stay false: the hill is SHARED — a self-reset would wipe everyone.
   allowSelfReset: false

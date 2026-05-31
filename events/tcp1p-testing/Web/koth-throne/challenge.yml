@@ -33,8 +33,8 @@ ad:
   # Health-only checker (KotH runs it with no flag). The ./checker image is
   # built automatically from its Dockerfile on sync/import — do NOT set
   # checkerImage here; the tooling builds it and wires up the ref.
-  # The hill is a target teams exploit from outside; it never calls out.
-  allowEgress: false
+  # Public egress enabled.
+  allowEgress: true
   # MUST stay false: the hill is SHARED — a team self-reset would wipe everyone's
   # foothold + the current king.
   allowSelfReset: false
