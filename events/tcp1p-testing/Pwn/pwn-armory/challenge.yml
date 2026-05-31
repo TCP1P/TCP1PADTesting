@@ -1,39 +1,36 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
-
-name: "pwn-armory"
-author: "TCP1P"
-category: "Pwn"   # category is taken from the parent folder (events/<event>/Pwn/…)
-
-# supports markdown & html tags
-description: |
+name: pwn-armory
+author: TCP1P
+description: >
   **Armory** — a menu-driven heap "item manager" served over TCP (one process
+
   per connection via socat).
 
+
   The binary is compiled deliberately weak (no canary, no PIE, no RELRO, exec
+
   stack) and is riddled with classic memory-corruption bugs: stack buffer
+
   overflow, format string, use-after-free, double free, OOB array index,
+
   signed-size `malloc`, heap overflow, command injection, and an uninitialized
+
   heap leak. Every bug leads to the flag — redirect into `print_flag()`, flip
+
   the `admin` guard, or just pop a shell. The flag is read fresh from
+
   `$GZCTF_FLAG_FILE` on each disclosure.
 
+
   Defenders: patch the binary (or source) while keeping the legitimate menu
+
   flow that the SLA checker drives. Attackers: leak other teams' flags.
-
-type: "AttackDefense" # don't touch this value
-value: 1000 # don't touch this value (points are admin-controlled)
-
-# containerImage omitted -> platform auto-builds ./src/Dockerfile.
+type: AttackDefense
+category: Pwn
 container:
-  exposePort: 9000
+  containerImage: gzctf-auto/19/262-pwn-armory:152e4df6a6e4
   memoryLimit: 256
   cpuCount: 1
   storageLimit: 256
-
+  exposePort: 9000
 ad:
-  # Functionality-only SLA checker (enochecker3 exit codes). The ./checker
-  # image is built automatically from its Dockerfile on sync/import — do NOT
-  # set checkerImage here; the tooling builds it and wires up the ref.
-  # Public egress enabled.
-  allowEgress: true
-  allowSelfReset: true
+  checkerImage: gzctf-auto/19/262-pwn-armory-checker:83a09e9fa5fd
