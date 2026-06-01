@@ -1,38 +1,32 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
-
-name: "owasp-portal"
-author: "TCP1P"
-category: "Web"   # category is taken from the parent folder (events/<event>/Web/…)
-
-# supports markdown & html tags
-description: |
+name: owasp-portal
+author: TCP1P
+description: >
   **TeamPortal** — a small team notes portal (register, log in, write & search
+
   private notes, reset your password, import settings/preferences, fetch link
+
   previews).
 
+
   Every legitimate feature also carries one **OWASP Top 10 (2021)**
+
   vulnerability, and **every one of them leaks the flag.** The platform plants
+
   a fresh flag into `$GZCTF_FLAG_FILE` each tick and the app mirrors it into the
+
   admin note / config so each bug class has a path to it.
 
+
   Defenders: patch all ten without breaking the SLA checker (it only exercises
+
   the legitimate features). Attackers: steal other teams' flags via any path.
-
-type: "AttackDefense" # don't touch this value
-value: 1000 # don't touch this value (points are admin-controlled)
-
-# A&D reuses the container block for the per-team SERVICE image + port.
-# containerImage omitted -> platform auto-builds ./src/Dockerfile.
+type: AttackDefense
+category: Web
 container:
-  exposePort: 8080
+  containerImage: gzctf-auto/19/264-owasp-portal:c8201d5c9760
   memoryLimit: 512
   cpuCount: 1
   storageLimit: 512
-
+  exposePort: 8080
 ad:
-  # Functionality-only SLA checker (enochecker3 exit codes). The ./checker
-  # image is built automatically from its Dockerfile on sync/import — do NOT
-  # set checkerImage here; the tooling builds it and wires up the ref.
-  # Public egress enabled.
-  allowEgress: true
-  allowSelfReset: true
+  checkerImage: gzctf-auto/19/264-owasp-portal-checker:7472271612d7
