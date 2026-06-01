@@ -26,11 +26,22 @@ description: >
   flow that the SLA checker drives. Attackers: leak other teams' flags.
 type: AttackDefense
 category: Pwn
+# containerImage omitted on purpose -> the platform auto-builds ./src/Dockerfile
+# on import. Do NOT pin a gzctf-auto/... tag here; that's the platform's own
+# build output and would turn this into a non-building "registry image".
 container:
-  containerImage: gzctf-auto/19/262-pwn-armory:152e4df6a6e4
   memoryLimit: 256
   cpuCount: 1
   storageLimit: 256
   exposePort: 9000
 ad:
-  checkerImage: gzctf-auto/19/262-pwn-armory-checker:83a09e9fa5fd
+  # Functionality-only SLA checker (enochecker3 exit codes). The ./checker image
+  # is built automatically from its Dockerfile on sync/import — do NOT set
+  # checkerImage here; the tooling builds it and wires up the ref.
+  # pwn-armory is resettable — a wedged box can be rebuilt from baseline.
+  allowEgress: true
+  allowSelfReset: true
+  # Gate SSH behind offense: when true, a team can SSH into its own service
+  # container only after capturing at least one flag for this challenge.
+  # Default false (SSH open to any team that registered a key).
+  sshRequiresFlag: false
