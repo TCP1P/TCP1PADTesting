@@ -1,20 +1,17 @@
 # TCP1P A&D + KotH Testing
 
-Four challenges for GZCTF — an **OWASP Top 10** target and a **PWN** target in
-each of two modes: **Attack & Defense** and **King of the Hill**. Authored in
-the gzcli repo layout: a `.gzctf/` server config plus an **event tree**
-`events/<event>/<Category>/<slug>/`, where each leaf challenge has a
-`challenge.yml`, an auto-built `src/` service, a harness-based `checker/`, and a
-reference `solver/`. gzcli walks `events/<event>/<Category>/` (categories: Misc,
-Crypto, Pwn, Web, Reverse, …) and the admin-UI Repo Binding imports every
-`challenge.yml` beneath the `.gzevent`.
+Four challenges for [GZCTF](https://github.com/GZTimeWalker/GZCTF) — an **OWASP
+Top 10** target and a **PWN** target in each of two live-engine modes:
+**Attack & Defense** and **King of the Hill**. Import the whole set into a GZCTF
+instance with one **repo binding** (admin → Repo Bindings): the server clones
+this repo, turns `events/tcp1p-testing/.gzevent` into a Game, and imports every
+`challenge.yml` beneath it — the `src/` services and `checker/` images build
+automatically, so there's nothing to push.
 
 ```
-.gzctf/
-  conf.yaml.example            # copy to conf.yaml (gitignored) for `gzcli sync`
 events/
   tcp1p-testing/
-    .gzevent                   # → one Game (repo-binding/gzcli import this)
+    .gzevent                   # → one Game (the repo binding imports this)
     Web/
       owasp-portal/   (A&D)    OWASP Top 10 web target — every vuln leaks the flag
       koth-throne/    (KotH)   OWASP Top 10 web hill — every vuln crowns you
@@ -26,6 +23,10 @@ events/
 
 The **category is the folder** (`Web/`, `Pwn/`) — the importer takes it from the
 path (the `category:` in each `challenge.yml` is kept in sync for clarity).
+
+> Need a platform to import these into first? Stand one up with the
+> [GZCTF platform template](https://github.com/TCP1P/gzctf-platform-template)
+> (`make wizard && make setup && make platform-up`).
 
 **Template contract.** The **service** auto-builds from `./src/Dockerfile`
 (supervisord PID 1 so a botched exploit doesn't drop the box). The **checker**
@@ -130,17 +131,22 @@ is read-only — confirms the menu is alive and an un-privileged crown is denied
 
 ---
 
-## Build, test, deploy
+## Deploy (admin → Repo Bindings)
 
 Both the **service** (`src/Dockerfile`) and the **checker** (`checker/Dockerfile`)
-are built automatically on sync/import — you don't push images or set
-`checkerImage`. To **deploy**, either:
+are built automatically on import — you don't push images or set `containerImage`
+/ `checkerImage`. To deploy:
 
-- **gzcli**: `cp .gzctf/conf.yaml.example .gzctf/conf.yaml`, fill in url+creds,
-  then `gzcli sync` (it builds `src/` + `checker/` and wires the refs), or
-- **admin → Repo Bindings**: point a binding at this repo; the poller finds
-  `events/tcp1p-testing/.gzevent`, makes it a Game, and imports all four
-  `challenge.yml`s (hidden until you enable them).
+1. In the GZCTF admin UI open **Repo Bindings** and add a binding — **Repo URL**
+   `https://github.com/TCP1P/TCP1PADTesting`, **Ref** empty (default branch),
+   **Interval** `60`, **no token** (this repo is public).
+2. Hit **Scan now**. The poller finds `events/tcp1p-testing/.gzevent`, creates the
+   Game *TCP1P A&D + KotH Testing*, and imports all four `challenge.yml`s (hidden).
+   The four `src/` services and four `checker/` images build in the background —
+   watch **admin → Builds**.
+3. The game imports **hidden**: open **admin → game → Info**, set your own
+   start/end time, and unhide it. Later syncs keep the challenges current but
+   won't revert your Info-page edits.
 
 Local smoke test (event tree paths):
 

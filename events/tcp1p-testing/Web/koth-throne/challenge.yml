@@ -22,7 +22,7 @@ type: "KingOfTheHill" # don't touch this value
 value: 1000 # don't touch this value (KotH is hold-scored, not flag-scored)
 
 # Player handout: the hill's source so teams can audit it for the OWASP bugs
-# and build their crown exploit. gzcli zips ./dist into the attachment.
+# and build their crown exploit. The importer ships ./dist as the attachment.
 provide: "./dist"
 
 # KotH reuses the container block, but there is ONE shared hill for the game.

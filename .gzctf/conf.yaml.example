@@ -1,7 +1,0 @@
-# gzcli server config — copy to `.gzctf/conf.yaml` (gitignored) and fill in.
-# Only needed to PUSH from this workstation with `gzcli sync`. The admin-UI
-# Repo Binding path does NOT use this file (the server clones the repo itself).
-url: "https://your-gzctf-host"
-creds:
-  username: "admin"
-  password: "change-me"

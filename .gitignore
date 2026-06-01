@@ -1,6 +1,3 @@
-# gzcli server credentials (keep the .example, never the real one)
-.gzctf/conf.yaml
-
 # build / test artifacts
 *.o
 **/src/armory
