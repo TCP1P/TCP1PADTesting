@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
+
+name: "token-forge"
+author: "TCP1P"
+category: "Crypto"   # category is taken from the parent folder (events/<event>/Crypto/…)
+
+# supports markdown & html tags
+description: |
+  **Token Forge** — a tiny members area that authenticates you with a JSON Web
+  Token. Visit it and you are issued a `guest` token; `GET /flag` only serves the
+  flag to an **admin** token.
+
+  The verifier trusts the token's own `alg` header — and it still honours the
+  legendary `alg: "none"` (RFC 7519's *unsecured* JWT, where the signature is
+  simply skipped). Forge an `admin` token with no signature and read the flag.
+
+  Standard jeopardy: you get your **own** container with a unique flag injected
+  at `$GZCTF_FLAG`. The Flask source is attached so you can spot the bug.
+
+type: "DynamicContainer"
+value: 300
+
+# Player handout: the Flask source (identical to what runs in the container) so
+# teams can find the alg-confusion bug. The importer ships ./dist as the attachment.
+provide: "./dist"
+
+# containerImage omitted on purpose -> the platform auto-builds ./src/Dockerfile
+# on import. DynamicContainer is a container type, so the same service build the
+# A&D/KotH challenges use applies here too. Do NOT pin a gzctf-auto/... tag here;
+# that's the platform's own build output and would turn this into a non-building
+# "registry image".
+container:
+  # The per-team dynamic flag. The platform resolves [GUID] and injects the
+  # result into the container as $GZCTF_FLAG; app.py reads it per request.
+  flagTemplate: "TCP1P{[GUID]}"
+  exposePort: 8080
+  memoryLimit: 256
+  cpuCount: 1
+  storageLimit: 256
+  enableTrafficCapture: false
+  networkMode: "Open"

@@ -8,11 +8,11 @@
 # stay HIDDEN until you enable them in the admin UI.
 
 title: "TCP1P A&D + KotH Testing"
-summary: "Four targets: OWASP-Top-10 and PWN, in both Attack & Defense and King of the Hill."
+summary: "Six challenges: OWASP-Top-10 and PWN in Attack & Defense and King of the Hill, plus two Jeopardy (Crypto + Misc)."
 content: |
-  ## TCP1P Attack & Defense + King of the Hill — testing event
+  ## TCP1P A&D + KotH + Jeopardy — testing event
 
-  Four services on one A&D engine:
+  Six challenges on one game, exercising all three ranking modes:
 
   **Attack & Defense** (one instance per team; flag rotates each tick):
   - **owasp-portal** — notes portal; each feature hides one OWASP Top 10 (2021)
@@ -27,8 +27,14 @@ content: |
   - **koth-pwn** — binary hill; memory-corruption flips `is_admin` or `ret2
     do_crown()` to enthrone your token.
 
+  **Jeopardy** (solve once, submit the flag):
+  - **token-forge** (Crypto) — JWT members area that still accepts `alg:"none"`;
+    forge an admin token (DynamicContainer, unique flag per team).
+  - **relic-archive** (Misc) — peel a Base64 → ROT13 → reversed artifact
+    (StaticAttachment, one fixed flag).
+
   Keep your service/hill healthy, patch the bugs, and (A&D) steal + submit
-  flags or (KotH) hold the marker.
+  flags, (KotH) hold the marker, or (Jeopardy) solve and submit.
 
 # ISO-8601. Local offsets are fine — normalized to UTC on import.
 # WITA = UTC+8: 10:00 → 22:00 (10 at night) on 2026-05-31.

@@ -1,28 +1,37 @@
-# TCP1P A&D + KotH Testing
+# TCP1P A&D + KotH + Jeopardy Testing
 
-Four challenges for [GZCTF](https://github.com/GZTimeWalker/GZCTF) — an **OWASP
-Top 10** target and a **PWN** target in each of two live-engine modes:
-**Attack & Defense** and **King of the Hill**. Import the whole set into a GZCTF
-instance with one **repo binding** (admin → Repo Bindings): the server clones
-this repo, turns `events/tcp1p-testing/.gzevent` into a Game, and imports every
-`challenge.yml` beneath it — the `src/` services and `checker/` images build
-automatically, so there's nothing to push.
+Six challenges for [GZCTF](https://github.com/GZTimeWalker/GZCTF) — an **OWASP
+Top 10** target and a **PWN** target in each of two live-engine modes
+(**Attack & Defense** and **King of the Hill**), plus two **Jeopardy**
+challenges, so one game exercises all three ranking modes (the attack map's
+A&D / KotH / Jeopardy switch). Import the whole set into a GZCTF instance with
+one **repo binding** (admin → Repo Bindings): the server clones this repo, turns
+`events/tcp1p-testing/.gzevent` into a Game, and imports every `challenge.yml`
+beneath it — the `src/` services and `checker/` images build automatically, so
+there's nothing to push.
 
 ```
 events/
   tcp1p-testing/
     .gzevent                   # → one Game (the repo binding imports this)
     Web/
-      owasp-portal/   (A&D)    OWASP Top 10 web target — every vuln leaks the flag
-      koth-throne/    (KotH)   OWASP Top 10 web hill — every vuln crowns you
+      owasp-portal/   (A&D)       OWASP Top 10 web target — every vuln leaks the flag
+      koth-throne/    (KotH)      OWASP Top 10 web hill — every vuln crowns you
     Pwn/
-      pwn-armory/     (A&D)    multi-bug PWN target — every bug leaks the flag
-      koth-pwn/       (KotH)   multi-bug PWN hill — every bug crowns you
-# each leaf: challenge.yml + src/{Dockerfile,…} + checker/{checker.py,checks.py,run.py,…} + solver/solve.py
+      pwn-armory/     (A&D)       multi-bug PWN target — every bug leaks the flag
+      koth-pwn/       (KotH)      multi-bug PWN hill — every bug crowns you
+    Crypto/
+      token-forge/    (Jeopardy)  JWT alg:"none" forge — DynamicContainer, unique flag/team
+    Misc/
+      relic-archive/  (Jeopardy)  layered-encoding warmup — StaticAttachment, static flag
+# A&D/KotH leaf: challenge.yml + src/… + checker/… + solver/solve.py
+# Jeopardy leaf: challenge.yml + (src/… for a container | dist/… for an attachment) + solver/solve.py
+#                (no SLA checker — jeopardy is flag-scored, not health-scored)
 ```
 
-The **category is the folder** (`Web/`, `Pwn/`) — the importer takes it from the
-path (the `category:` in each `challenge.yml` is kept in sync for clarity).
+The **category is the folder** (`Web/`, `Pwn/`, `Crypto/`, `Misc/`) — the importer
+takes it from the path (the `category:` in each `challenge.yml` is kept in sync
+for clarity).
 
 > Need a platform to import these into first? Stand one up with the
 > [GZCTF platform template](https://github.com/TCP1P/gzctf-platform-template)
@@ -129,6 +138,38 @@ to your token, then flip `is_admin` (`0x4038c0`) or `ret2 do_crown()`.
 is read-only — confirms the menu is alive and an un-privileged crown is denied
 (it never sets `banner` or flips `is_admin`, so it can't touch `/koth/king`).
 
+## Challenge 5 — `token-forge` (Jeopardy, Crypto — JWT `alg:"none"`)
+
+A Flask "members area" that authenticates with a JWT. You are issued a `guest`
+token; `GET /flag` only serves the flag to an **admin** token. The verifier
+trusts the token's own `alg` header and still honours `alg:"none"` (RFC 7519's
+*unsecured* JWT, signature skipped) — so you forge an admin token with an empty
+signature.
+
+| Field | Value |
+|-------|-------|
+| Type | `DynamicContainer` — one container per team, unique flag at `$GZCTF_FLAG` |
+| Bug | `verify()` accepts `alg:"none"` and returns the claims unverified |
+| Win | `header {"alg":"none"}` · `payload {"admin":true}` · empty sig → `GET /flag` |
+
+`provide: ./dist` ships the Flask source; `solver/solve.py` forges the token and
+reads `/flag`. Auto-builds from `./src/Dockerfile` (a `DynamicContainer` is a
+container type, so the service build applies just like the A&D/KotH ones).
+
+## Challenge 6 — `relic-archive` (Jeopardy, Misc — layered encoding)
+
+A warmup. We recovered a string that was Base64-encoded, then ROT13'd, then
+written **backwards**. Peel the layers off in reverse to read the relic.
+
+| Field | Value |
+|-------|-------|
+| Type | `StaticAttachment` — one fixed flag, an attachment, no container |
+| Artifact | `dist/relic.txt` = `reverse( rot13( base64( flag ) ) )` |
+| Recover | reverse → ROT13 → Base64-decode |
+
+`solver/solve.py` decodes it; the static flag lives in `flags:` in the
+`challenge.yml`.
+
 ---
 
 ## Deploy (admin → Repo Bindings)
@@ -141,9 +182,10 @@ are built automatically on import — you don't push images or set `containerIma
    `https://github.com/TCP1P/TCP1PADTesting`, **Ref** empty (default branch),
    **Interval** `60`, **no token** (this repo is public).
 2. Hit **Scan now**. The poller finds `events/tcp1p-testing/.gzevent`, creates the
-   Game *TCP1P A&D + KotH Testing*, and imports all four `challenge.yml`s (hidden).
-   The four `src/` services and four `checker/` images build in the background —
-   watch **admin → Builds**.
+   Game *TCP1P A&D + KotH Testing*, and imports all six `challenge.yml`s (hidden).
+   The five `src/` services (4 A&D/KotH + `token-forge`) and four A&D/KotH
+   `checker/` images build in the background — watch **admin → Builds**.
+   (`relic-archive` is a `StaticAttachment` — nothing to build.)
 3. The game imports **hidden**: open **admin → game → Info**, set your own
    start/end time, and unhide it. Later syncs keep the challenges current but
    won't revert your Info-page edits.
@@ -162,6 +204,20 @@ docker run --rm --network host \
   -e GZCTF_TARGET_IP=$IP -e GZCTF_TARGET_PORT=8080 -e GZCTF_ROUND=1 -e GZCTF_TEAM_ID=1 \
   owasp-portal-checker; echo "exit=$?"                       # 0 = Ok
 python3 $EV/Web/owasp-portal/solver/solve.py $IP 8080        # prints captured flags
+```
+
+Jeopardy smoke tests:
+
+```sh
+EV=events/tcp1p-testing
+# token-forge (DynamicContainer): platform injects the flag as $GZCTF_FLAG
+docker build -t token-forge $EV/Crypto/token-forge/src
+docker run -d --name tf -e GZCTF_FLAG='TCP1P{local_test}' -p 8080:8080 token-forge
+python3 $EV/Crypto/token-forge/solver/solve.py 127.0.0.1 8080   # FLAG: TCP1P{local_test}
+docker rm -f tf
+
+# relic-archive (StaticAttachment): no container, decode the artifact
+python3 $EV/Misc/relic-archive/solver/solve.py $EV/Misc/relic-archive/dist/relic.txt
 ```
 
 > These are intentionally vulnerable. Run them only inside the isolated A&D
