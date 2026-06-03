@@ -1,28 +1,21 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
-
-name: "relic-archive"
-author: "TCP1P"
-category: "Misc"   # category is taken from the parent folder (events/<event>/Misc/…)
-
-# supports markdown & html tags
-description: |
+name: relic-archive
+author: TCP1P
+description: >
   **Relic Archive** — we recovered a string from an old artifact, but it went
+
   through a little machine on the way out: it was **Base64**-encoded, then
+
   **ROT13**'d, and finally the whole thing was written **backwards**. Peel the
+
   layers off in reverse to read the relic.
 
+
   Standard jeopardy: download the attachment, recover the flag offline, and
+
   submit it. (Static flag — same for everyone.)
-
-type: "StaticAttachment"
-value: 150
-
-# StaticAttachment: the accepted flag is fixed here (no per-team/dynamic flag).
-flags:
-  - "TCP1P{p33l_th3_l4y3rs_0ff}"
-
-# The encoded artifact, shipped to players as the attachment.
-provide: "./dist"
-
+type: StaticAttachment
+category: Misc
 hints:
-  - "Three layers, undone in order: reverse the text → ROT13 → Base64-decode."
+- 'Three layers, undone in order: reverse the text → ROT13 → Base64-decode.'
+flags:
+- TCP1P{p33l_th3_l4y3rs_0ff}
