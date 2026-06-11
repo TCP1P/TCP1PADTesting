@@ -1,36 +1,25 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
-
-name: "shared-portal"
-author: "TCP1P"
-category: "Web"   # category is taken from the parent folder (events/<event>/Web/…)
-
-# supports markdown & html tags
-description: |
+name: shared-portal
+author: TCP1P
+description: >
   **Shared Portal** — a static-flag web service that runs as ONE shared
+
   container for the whole game instead of one container per team.
 
+
   Every team connects to the **same** instance (great when server resources
+
   are tight). The page prints the container's hostname so you can confirm it:
+
   open it from two different teams and you'll see the **same** hostname.
 
+
   Static flag — the same for everyone. Just find it on the page.
-
-type: "StaticContainer"
-value: 100
-
-# StaticContainer: the accepted flag is fixed here (same for every team). It is
-# also baked into the image (the app serves it), so the two must match.
+type: StaticContainer
+category: Web
 flags:
-  - "TCP1P{shared_container_one_box_for_every_team}"
-
-# containerImage omitted on purpose -> the platform auto-builds ./src/Dockerfile
-# on import. Do NOT pin a gzctf-auto/... tag here.
+- TCP1P{shared_container_one_box_for_every_team}
 container:
-  exposePort: 8080
   memoryLimit: 128
   cpuCount: 1
   storageLimit: 256
-  networkMode: "Open"
-  # Shared instance: all teams share ONE container instead of one per team.
-  # Only honored for type: StaticContainer (single static flag for everyone).
-  enableSharedContainer: true
+  exposePort: 8080
