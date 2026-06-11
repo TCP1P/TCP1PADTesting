@@ -1,31 +1,25 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
-
-name: "perteam-portal"
-author: "TCP1P"
-category: "Web"   # category is taken from the parent folder (events/<event>/Web/…)
-
-# supports markdown & html tags
-description: |
+name: perteam-portal
+author: TCP1P
+description: >
   **Per-Team Portal** — the same little static-flag web service, but in the
+
   normal mode: **one container per team**. Each team gets its own instance.
 
+
   The page prints the container's hostname, which is **different** for each team
+
   (unlike its sibling *Shared Portal*, where everyone shares one box). This is
+
   the default container behavior; *Shared Portal* shows the shared-instance mode.
 
+
   Static flag — the same for everyone. Just find it on the page.
-
-type: "StaticContainer"
-value: 100
-
+type: StaticContainer
+category: Web
 flags:
-  - "TCP1P{per_team_container_one_box_each_team}"
-
-# containerImage omitted on purpose -> the platform auto-builds ./src/Dockerfile.
+- TCP1P{per_team_container_one_box_each_team}
 container:
-  exposePort: 8080
   memoryLimit: 128
   cpuCount: 1
   storageLimit: 256
-  networkMode: "Open"
-  # Normal per-team container: enableSharedContainer omitted (defaults to false).
+  exposePort: 8080
