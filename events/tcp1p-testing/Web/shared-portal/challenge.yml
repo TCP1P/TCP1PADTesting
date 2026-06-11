@@ -23,3 +23,4 @@ container:
   cpuCount: 1
   storageLimit: 256
   exposePort: 8080
+  enableSharedContainer: true
