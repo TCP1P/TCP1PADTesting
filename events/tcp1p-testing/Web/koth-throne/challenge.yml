@@ -1,44 +1,32 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/challenge.schema.yaml
-
-name: "koth-throne"
-author: "TCP1P"
-category: "Web"   # category is taken from the parent folder (events/<event>/Web/…)
-
-# supports markdown & html tags
-description: |
+name: koth-throne
+author: TCP1P
+description: >
   **Throne Room** — a King-of-the-Hill web "hill". ONE shared service; there is
+
   no per-team flag. Each round the platform issues you a fresh control token —
+
   exploit the hill to write that **exact** token into the marker file
+
   `/koth/king`. While it holds your token and the hill is healthy, you earn
+
   hold points.
 
+
   Crowning is admin-only and you get no admin account, so taking the hill means
+
   exploiting one of ten planted **OWASP Top 10 (2021)** bugs — each one lets you
+
   land your token in `/koth/king` (reach the crown, or write the marker directly
+
   via RCE / arbitrary write). Defenders patch the bugs while keeping `GET /` and
+
   the legitimate crown alive.
-
-type: "KingOfTheHill" # don't touch this value
-value: 1000 # don't touch this value (KotH is hold-scored, not flag-scored)
-
-# Player handout: the hill's source so teams can audit it for the OWASP bugs
-# and build their crown exploit. The importer ships ./dist as the attachment.
-provide: "./dist"
-
-# KotH reuses the container block, but there is ONE shared hill for the game.
-# containerImage omitted -> platform auto-builds ./src/Dockerfile.
+type: KingOfTheHill
+category: Web
 container:
-  exposePort: 8080
   memoryLimit: 512
   cpuCount: 1
   storageLimit: 512
-
+  exposePort: 8080
 ad:
-  # Health-only checker (KotH runs it with no flag). The ./checker image is
-  # built automatically from its Dockerfile on sync/import — do NOT set
-  # checkerImage here; the tooling builds it and wires up the ref.
-  # Public egress enabled.
-  allowEgress: true
-  # MUST stay false: the hill is SHARED — a team self-reset would wipe everyone's
-  # foothold + the current king.
   allowSelfReset: false
