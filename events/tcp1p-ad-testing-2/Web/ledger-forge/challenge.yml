@@ -61,6 +61,3 @@ ad:
   # attack proxy, flag rotation and scoreboard all work unchanged. Set false (or
   # remove) to have GZCTF host the container per team instead.
   selfHosted: true
-flags:
-- flag{ledger-forge-warmup-0001}
-- flag{ledger-forge-warmup-0002}
