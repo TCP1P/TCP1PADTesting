@@ -34,10 +34,3 @@ container:
   cpuCount: 1
   storageLimit: 256
   exposePort: 9000
-ad:
-  # Bring-your-own-container: each team runs this service on its OWN machine and
-  # connects it through the GZCTF tunnel agent (download setup.sh from the
-  # challenge panel → `sh setup.sh`). GZCTF launches only a relay; the checker,
-  # attack proxy, flag rotation and scoreboard all work unchanged. Set false (or
-  # remove) to have GZCTF host the container per team instead.
-  selfHosted: true
