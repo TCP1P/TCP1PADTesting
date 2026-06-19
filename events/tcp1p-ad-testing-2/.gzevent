@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/dimasma0305/gzcli/refs/heads/main/internal/template/templates/others/ctf-template/.gzctf/gzevent.schema.yaml
+
+# Event manifest for "TCP1P A&D Testing 2" — two HARD, bring-your-own-container
+# Attack & Defense challenges. The GZCTF repo scanner discovers this file and
+# creates/updates a Game from it; every challenge.yml under this directory is
+# imported. Both challenges set `ad.selfHosted: true` (BYOC): GZCTF launches a
+# tunnel relay and each team runs the service on its OWN machine (download
+# setup.sh from the challenge panel → `sh setup.sh`). Imported challenges stay
+# HIDDEN until you enable them in the admin UI.
+
+title: "TCP1P A&D Testing 2"
+summary: "Two HARD bring-your-own-container Attack & Defense challenges: a chained JWT alg-confusion + SSTI web service, and a heap use-after-free pwn binary."
+content: |
+  ## TCP1P A&D Testing 2 — hard, self-hosted (BYOC) Attack & Defense
+
+  Two Attack & Defense challenges, both **bring-your-own-container**: you run the
+  vulnerable service on your *own* machine and connect it to the game through the
+  GZCTF tunnel agent (open the challenge → **Download setup.sh** → `sh setup.sh`).
+  GZCTF only launches a relay — the SLA checker, attack proxy, flag rotation and
+  scoreboard all work exactly as for a hosted A&D service.
+
+  **ledger-forge** (Web, hard) — a JWT-authenticated expense-ledger API. Two
+  chained bugs lead to the flag: the token verifier accepts `HS256` as well as
+  `RS256` (algorithm confusion — sign an admin token with the *public* key), and
+  the admin-only report endpoint renders a user-supplied Jinja2 template
+  (server-side template injection → RCE → read `$GZCTF_FLAG_FILE`). Patch *both*
+  without breaking the normal register / login / add-entry / report flow the SLA
+  checker drives.
+
+  **vault-keeper** (Pwn, hard) — a menu-driven secret vault served over TCP. A
+  use-after-free on delete (the slot pointer is never cleared) lets you
+  reallocate a freed note's metadata as a data buffer and forge its
+  `{size, pointer}` fields — an arbitrary read that dumps the flag from its fixed
+  address. Patch the dangling pointer while keeping the create/show/edit/delete
+  flow alive.
+
+  Keep your service healthy, patch the bugs, and steal + submit other teams' flags.
+
+# ISO-8601; local offsets normalized to UTC on import. WITA = UTC+8.
+start: "2026-06-20T10:00:00+08:00"
+end: "2026-06-30T22:00:00+08:00"
+
+hidden: true               # keep hidden until you flip it in the admin UI
+practiceMode: true
+acceptWithoutReview: false
+teamMemberCountLimit: 5
+containerCountLimit: 5
+
+# Event-wide Attack & Defense settings — shared by EVERY A&D challenge here.
+ad:
+  tickSeconds: 60              # round length in seconds
+  flagLifetimeTicks: 5         # ticks a planted flag stays submittable
+  warmupSeconds: 600           # grace after start before scoring begins
+  resetCooldownMinutes: 5      # min minutes between a team's self-resets
+  allowSnapshotDownload: true
